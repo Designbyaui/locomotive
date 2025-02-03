@@ -1,4 +1,5 @@
 **Wooden track locomotive.** 
+![Screenshot 2025-02-03 144858](https://github.com/user-attachments/assets/e640376c-b0fa-4bdd-aeaf-531ae99a9261)
 
 Starting a new project with intention to create a locomotive for Ikea/ Brio wooden track. 
 
