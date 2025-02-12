@@ -3,7 +3,9 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <Stepper.h>
-#define STEPS 100
+#define STEPS 360
+#define MAX_SPEED 255
+#define RGB_BUILTIN 21
 Stepper stepper(STEPS, 3, 4, 5, 6);
 
 //motor
@@ -11,8 +13,8 @@ Stepper stepper(STEPS, 3, 4, 5, 6);
 #define A2 2 
 #define FRQ 300000 //analogfreq
 unsigned int delaytime = 10;
-int previous = 0;
-
+int previous = 125;
+long stepsglobal = 0;
 
 typedef struct struct_message {
     int xVal;
@@ -42,9 +44,10 @@ void setup() {
   //motor
     pinMode(A1, OUTPUT);
     pinMode(A2, OUTPUT);
+    pinMode(RGB_BUILTIN, OUTPUT);
    // analogWriteFrequency(A1,FRQ);
    // analogWriteFrequency(A2,FRQ);
-    stepper.setSpeed(30);
+    stepper.setSpeed(40);
 
 
   
@@ -62,6 +65,16 @@ void setup() {
 
 
 void loop() {
+#ifdef RGB_BUILTIN
+  rgbLedWrite(RGB_BUILTIN, RGB_BRIGHTNESS, 0, 0);  // Red
+  delay(100);
+  rgbLedWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0);  // Green
+  delay(100);
+  rgbLedWrite(RGB_BUILTIN, 0, 0, RGB_BRIGHTNESS);  // Blue
+  delay(100);
+  rgbLedWrite(RGB_BUILTIN, 0, 0, 0);  // Off / black
+  delay(100);
+#endif
 }
 void commands() {
   int val = 0;
@@ -69,14 +82,14 @@ void commands() {
   val = constrain(120-myData.xVal,0,120);
   (Serial.print("Reverse"));
   (Serial.println(val));
-  analogWrite(A1,map(val,0,120,0,55));
+  analogWrite(A1,map(val,0,120,0,MAX_SPEED));
   analogWrite(A2,0); 
  }
  else if (myData.xVal > 130){
   val = constrain(myData.xVal-130,0,120);
   (Serial.print("Forward"));
   (Serial.println(val));
-  analogWrite(A2,map(val,0,120,0,55));
+  analogWrite(A2,map(val,0,120,0,MAX_SPEED));
   analogWrite(A1,0); 
  }
  else{
@@ -84,15 +97,25 @@ void commands() {
   analogWrite(A2,0);
   analogWrite(A1,0); 
  }
-if (myData.yVal < 120){
- stepper.step(-constrain(120-myData.yVal,0,120));
- 
+if (myData.yVal < (previous-15)){
+ stepper.step(-20);
+ stepsglobal -= 1;
+ previous -= 17;
+ Serial.print("Right");
+ Serial.println(previous);
 }
-else if (myData.yVal > 130){
-  stepper.step(constrain(myData.yVal-130,0,120));
+else if (myData.yVal > (previous+15)){
+  stepper.step(20);
+  stepsglobal += 1;
+  previous += 17;
+  Serial.print("Left");
+ Serial.println(previous);
 }
+else
+{
   digitalWrite(3,LOW);
   digitalWrite(4,LOW);
   digitalWrite(5,LOW);
-  digitalWrite(6,LOW);   
+  digitalWrite(6,LOW); 
+} 
 }
