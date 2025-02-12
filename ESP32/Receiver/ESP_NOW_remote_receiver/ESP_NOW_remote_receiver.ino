@@ -1,20 +1,20 @@
 // ESP-NOW  receiver + motors
 
-#include <esp_now.h>
+#include <esp_now.h>  
 #include <WiFi.h>
 #include <Stepper.h>
-#define STEPS 360
-#define MAX_SPEED 255
-#define RGB_BUILTIN 21
-Stepper stepper(STEPS, 3, 4, 5, 6);
+#define STEPS 360 //steering stepper motor steps from one end to another end
+#define MAX_SPEED 255 // drive motor max speed 0-255 
+#define RGB_BUILTIN 21 // Built in RGB LED pin
+Stepper stepper(STEPS, 3, 4, 5, 6); // Init Steering stepper motor on pins 3-6
 
-//motor
+//drive motor
 #define A1 1    
 #define A2 2 
-#define FRQ 300000 //analogfreq
-unsigned int delaytime = 10;
-int previous = 125;
-long stepsglobal = 0;
+#define FRQ 30000 //analogfreq to help with PWM noise, did not help a lot thogh 
+
+int previous = 125; //Middle point of steering stepper. Used to keep track of position
+long stepsglobal = 0; //Stepper debug value
 
 typedef struct struct_message {
     int xVal;
@@ -40,18 +40,15 @@ int flag = 0;
 }
  
 void setup() {
-      Serial.begin(115200);
+      Serial.begin(115200); //Debug serial
   //motor
-    pinMode(A1, OUTPUT);
-    pinMode(A2, OUTPUT);
+    pinMode(A1, OUTPUT); //Drive motor outputs
+    pinMode(A2, OUTPUT); //Drive motor outputs
     pinMode(RGB_BUILTIN, OUTPUT);
-   // analogWriteFrequency(A1,FRQ);
+   // analogWriteFrequency(A1,FRQ); //analogfreq to help with PWM noise, did not help a lot thogh 
    // analogWriteFrequency(A2,FRQ);
-    stepper.setSpeed(40);
-
-
+    stepper.setSpeed(40); //Set steering motor speed
   
- // Serial.begin(115200);
   delay(100);
   WiFi.mode(WIFI_STA);
 
@@ -77,8 +74,9 @@ void loop() {
 #endif
 }
 void commands() {
+//*******************START OF Driving commands*************************
   int val = 0;
- if (myData.xVal < 120){
+ if (myData.xVal < 120){ 
   val = constrain(120-myData.xVal,0,120);
   (Serial.print("Reverse"));
   (Serial.println(val));
@@ -97,6 +95,9 @@ void commands() {
   analogWrite(A2,0);
   analogWrite(A1,0); 
  }
+//*******************END OF Driving commands*************************
+
+//*******************START OF Steering commands*************************
 if (myData.yVal < (previous-15)){
  stepper.step(-20);
  stepsglobal -= 1;
@@ -118,4 +119,6 @@ else
   digitalWrite(5,LOW);
   digitalWrite(6,LOW); 
 } 
+
+//*******************END OF Steering commands*************************
 }
